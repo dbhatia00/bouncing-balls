@@ -1,10 +1,18 @@
 package bouncingballs;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Bounds;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.IOException;
 
@@ -13,24 +21,26 @@ import java.io.IOException;
  */
 public class App extends Application {
 
-    private static Scene scene;
-
     @Override
-    public void start(Stage stage) throws IOException {
-        scene = new Scene(loadFXML("primary"), 640, 480);
+    public void start(Stage stage) {
+    	Pane canvas = new Pane();
+    	Scene scene = new Scene(canvas, 300, 300);
+    	Circle ball = new Circle(10, Color.RED);
+        ball.relocate(0, 10);
+        
+        canvas.getChildren().add(ball);
+        
+        stage.setTitle("Moving Ball");
         stage.setScene(scene);
         stage.show();
+        
+        Bounds bounds = canvas.getBoundsInLocal();
+        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(3), 
+                new KeyValue(ball.layoutXProperty(), bounds.getMaxX()-ball.getRadius())));
+        timeline.setCycleCount(2);
+        timeline.play();
     }
-
-    static void setRoot(String fxml) throws IOException {
-        scene.setRoot(loadFXML(fxml));
-    }
-
-    private static Parent loadFXML(String fxml) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource(fxml + ".fxml"));
-        return fxmlLoader.load();
-    }
-
+    
     public static void main(String[] args) {
         launch();
     }
