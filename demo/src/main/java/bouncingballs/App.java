@@ -18,7 +18,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-
+import java.util.ArrayList;
+import java.util.Random;
 import java.io.IOException;
 
 /**
@@ -26,6 +27,8 @@ import java.io.IOException;
  */
 public class App extends Application {
     Pane canvas = new Pane();
+
+    private int numBalls = 20;
 
     public void handleTimeline(Circle ball, double dx, double dy){
         final Timeline loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
@@ -57,34 +60,47 @@ public class App extends Application {
         loop.play();
     }
 
+    private double generateRadius(){
+        Random rand = new Random();
+        return rand.nextInt(40 - 10) + 10;
+    }
+
+    private Color generateColor(){
+        Random rand = new Random();
+        return Color.rgb(rand.nextInt(255), rand.nextInt(255), rand.nextInt(255));
+    }
+
     public double calculateDelta(Circle ball){
         return (1 / ball.getRadius()) * 10 ;
     }
 
     @Override
     public void start(Stage stage) {
-    	Scene scene = new Scene(canvas, 800, 400);
-    	Circle ball = new Circle(10, Color.RED);
-        Circle ball2 = new Circle(20, Color.BLUE);
-
-        ball.relocate(0, 10);
-        ball2.relocate(100, 100);
-
-        canvas.getChildren().add(ball);
-        canvas.getChildren().add(ball2);
+    	Scene scene = new Scene(canvas, 1300, 800);
+        ArrayList<Circle> balls = new ArrayList<Circle>(); 
+        
+        Circle temp;
+        for(int i = 0; i < numBalls; i++){
+            balls.add(new Circle(generateRadius(), generateColor()));
+            balls.get(i).relocate(i*20, i*20);
+            canvas.getChildren().add(balls.get(i));
+        }
         
         stage.setTitle("Moving Ball");
         stage.setScene(scene);
         stage.show();
         
-        handleTimeline(ball, calculateDelta(ball), calculateDelta(ball));
-        handleTimeline(ball2, calculateDelta(ball2), calculateDelta(ball2));
+        for(int i = 0; i < numBalls; i++){
+            handleTimeline(balls.get(i), calculateDelta(balls.get(i)), calculateDelta(balls.get(i)));
+        }
+
         scene.setOnMousePressed(new EventHandler<MouseEvent>() {         
             @Override         
             public void handle(MouseEvent event) {  
                 if (event.getButton() == MouseButton.PRIMARY) {
-                    handleTimeline(ball, -calculateDelta(ball), -calculateDelta(ball));
-                    handleTimeline(ball2, calculateDelta(ball2), calculateDelta(ball2));
+                    for(int i = 0; i < numBalls; i++){
+                        handleTimeline(balls.get(i), -calculateDelta(balls.get(i)), calculateDelta(balls.get(i)));
+                    }
                 }
             }     
         }); 
