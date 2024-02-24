@@ -42,7 +42,7 @@ public class App extends Application {
      *      int index
      * OUT: void
     */
-    public void handleTimeline(Circle ball, double dx, double dy, final int index){
+    public void handleTimeline(Circle ball, final double dx, final double dy, final int index){
         
         Timeline loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
             double deltaX = dx;
@@ -106,6 +106,16 @@ public class App extends Application {
     }
 
     /* 
+     * A function to randomly calculate a start position for a ball
+     * IN:  void
+     * OUT: int
+    */
+    public int calculateInitialStart(){
+        Random rand = new Random();
+        return rand.nextInt((int) scene.getHeight());
+    }
+
+    /* 
      * A function to initialize all of the variables and kick off the timelines
      * IN:  Stage object
      * OUT: void
@@ -114,7 +124,7 @@ public class App extends Application {
     public void start(Stage stage) {        
         for(int i = 0; i < numBalls; i++){
             balls.add(new Circle(generateRadius(), generateColor()));
-            balls.get(i).relocate(i*30, i*30);
+            balls.get(i).relocate(calculateInitialStart(), calculateInitialStart());
             canvas.getChildren().add(balls.get(i));
             toFlip.add(false);
         }
