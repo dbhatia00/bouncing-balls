@@ -27,20 +27,21 @@ import java.io.IOException;
  */
 public class App extends Application {
     Pane canvas = new Pane();
+    Scene scene = new Scene(canvas, 1300, 800);
+    ArrayList<Circle> balls = new ArrayList<Circle>(); 
+    ArrayList<Integer> counts = new ArrayList<Integer>();
+    private final int numBalls = 20;
 
-    private int numBalls = 20;
-
-    public void handleTimeline(Circle ball, double dx, double dy){
-        final Timeline loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
-
+    public void handleTimeline(Circle ball, double dx, double dy, final int index){
+        
+        Timeline loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
             double deltaX = dx;
             double deltaY = dy;
-
+            
             @Override
             public void handle(final ActionEvent t) {
                 ball.setLayoutX(ball.getLayoutX() + deltaX);
                 ball.setLayoutY(ball.getLayoutY() + deltaY);
-
                 final Bounds bounds = canvas.getBoundsInLocal();
                 final boolean atRightBorder = ball.getLayoutX() >= (bounds.getMaxX() - ball.getRadius());
                 final boolean atLeftBorder = ball.getLayoutX() <= (bounds.getMinX() + ball.getRadius());
@@ -52,6 +53,11 @@ public class App extends Application {
                 }
                 if (atBottomBorder || atTopBorder) {
                     deltaY *= -1;
+                }
+                if (counts.get(index) % 2 == 1){
+                    deltaX *= -1;
+                    deltaY *= -1;
+                    counts.set(index, counts.get(index) + 1);
                 }
             }
         }));
@@ -75,15 +81,12 @@ public class App extends Application {
     }
 
     @Override
-    public void start(Stage stage) {
-    	Scene scene = new Scene(canvas, 1300, 800);
-        ArrayList<Circle> balls = new ArrayList<Circle>(); 
-        
-        Circle temp;
+    public void start(Stage stage) {        
         for(int i = 0; i < numBalls; i++){
             balls.add(new Circle(generateRadius(), generateColor()));
-            balls.get(i).relocate(i*20, i*20);
+            balls.get(i).relocate(i*30, i*30);
             canvas.getChildren().add(balls.get(i));
+            counts.add(0);
         }
         
         stage.setTitle("Moving Ball");
@@ -91,19 +94,20 @@ public class App extends Application {
         stage.show();
         
         for(int i = 0; i < numBalls; i++){
-            handleTimeline(balls.get(i), calculateDelta(balls.get(i)), calculateDelta(balls.get(i)));
+            handleTimeline(balls.get(i), calculateDelta(balls.get(i)), calculateDelta(balls.get(i)), i);
         }
 
-        scene.setOnMousePressed(new EventHandler<MouseEvent>() {         
-            @Override         
-            public void handle(MouseEvent event) {  
-                if (event.getButton() == MouseButton.PRIMARY) {
-                    for(int i = 0; i < numBalls; i++){
-                        handleTimeline(balls.get(i), -calculateDelta(balls.get(i)), calculateDelta(balls.get(i)));
-                    }
+        scene.setOnMouseClicked(new EventHandler<javafx.scene.input.MouseEvent>() {
+            @Override
+            public void handle(javafx.scene.input.MouseEvent event) {
+                double mouseX = event.getX();
+                double mouseY = event.getY();
+                // Move circles away from the mouse click
+                for(int i = 0; i < numBalls; i++){
+                    counts.set(i, counts.get(i) + 1);
                 }
-            }     
-        }); 
+            }
+        });
     }
     
     public static void main(String[] args) {
