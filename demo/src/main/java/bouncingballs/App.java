@@ -18,8 +18,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.*;
 import java.io.IOException;
 
 /**
@@ -30,7 +29,7 @@ public class App extends Application {
     private Scene scene = new Scene(canvas, 1300, 800);
     private ArrayList<Circle> balls = new ArrayList<Circle>(); 
     private ArrayList<Boolean> toFlip = new ArrayList<Boolean>();
-    private final int numBalls = 20;
+    private final int numBalls = 50;
     private double mouseX;
     private double mouseY;
 
@@ -65,8 +64,8 @@ public class App extends Application {
                     deltaY *= -1;
                 }
                 if (toFlip.get(index)){
-                    deltaX *= -1;
-                    deltaY *= -1;
+                    deltaX = doMouseclickMath_X(ball.getLayoutX(), ball.getLayoutY(), Math.sqrt(Math.pow(deltaY, 2) + Math.pow(deltaX, 2)));
+                    deltaY = doMouseclickMath_Y(ball.getLayoutX(), ball.getLayoutY(), Math.sqrt(Math.pow(deltaY, 2) + Math.pow(deltaX, 2)));
                     toFlip.set(index, false);
                 }
             }
@@ -75,6 +74,43 @@ public class App extends Application {
         loop.setCycleCount(Timeline.INDEFINITE);
         loop.play();
     }
+
+
+    /* 
+     * A function to do the math on the mouseclick for the Y component
+     * IN:  double currentX
+     *      double currentY
+     *      double magnitude
+     * OUT: double radius 
+    */
+    private double doMouseclickMath_X(double currentX, double currentY, double magnitude){
+        double angle = Math.atan(Math.abs(currentY - mouseY) / Math.abs(currentX - mouseX));
+        if (currentX > mouseX){
+            return magnitude * Math.sin(angle);
+        }
+        else {
+            return -magnitude * Math.sin(angle);
+        }
+    }
+
+
+    /* 
+     * A function to do the math on the mouseclick for the Y component
+     * IN:  double currentX
+     *      double currentY
+     *      double magnitude
+     * OUT: double radius 
+    */
+    private double doMouseclickMath_Y(double currentX, double currentY, double magnitude){
+        double angle = Math.atan(Math.abs(currentY - mouseY) / Math.abs(currentX - mouseX));
+        if (currentY > mouseY){
+            return magnitude * Math.cos(angle);
+        }
+        else {
+            return -magnitude * Math.cos(angle);
+        }
+    }
+
 
     /* 
      * A function to randomly generate a ball's radius
@@ -86,6 +122,7 @@ public class App extends Application {
         return rand.nextInt(40 - 10) + 10;
     }
 
+
     /* 
      * A function to randomly generate a ball's color
      * IN:  Void
@@ -96,14 +133,16 @@ public class App extends Application {
         return Color.rgb(rand.nextInt(255), rand.nextInt(255), rand.nextInt(255));
     }
 
+
     /* 
      * A function to calculate the radius of an object based on its radius
      * IN:  Circle object
      * OUT: double delta 
     */
     public double calculateInitialDelta(Circle ball){
-        return (1 / ball.getRadius()) * 10 ;
+        return (1 / ball.getRadius()) * 30 ;
     }
+
 
     /* 
      * A function to randomly calculate a start position for a ball
@@ -115,6 +154,7 @@ public class App extends Application {
         return rand.nextInt((int) scene.getHeight());
     }
 
+    
     /* 
      * A function to initialize all of the variables and kick off the timelines
      * IN:  Stage object
