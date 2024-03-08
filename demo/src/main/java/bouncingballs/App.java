@@ -10,6 +10,7 @@ import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -162,6 +163,8 @@ public class App extends Application {
     */
     @Override
     public void start(Stage stage) {        
+
+        // Add balls to scene
         for(int i = 0; i < numBalls; i++){
             balls.add(new Circle(generateRadius(), generateColor()));
             balls.get(i).relocate(calculateInitialStart(), calculateInitialStart());
@@ -169,14 +172,30 @@ public class App extends Application {
             toFlip.add(false);
         }
         
+        // Add swap button to scene
+        Button btn = new Button();
+        btn.setText("Swap Objects!");
+        btn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                canvas.getChildren().clear();
+            }
+        });
+        btn.setLayoutX(150);
+        btn.setLayoutY(120);
+        canvas.getChildren().add(btn);
+
+        // Set scene parameters and show screen
         stage.setTitle("Moving Ball");
         stage.setScene(scene);
         stage.show();
         
+        // Create the timeline for the balls
         for(int i = 0; i < numBalls; i++){
             handleTimeline(balls.get(i), calculateInitialDelta(balls.get(i)), calculateInitialDelta(balls.get(i)), i);
         }
 
+        // Handle mouseclick logic
         scene.setOnMouseClicked(new EventHandler<javafx.scene.input.MouseEvent>() {
             @Override
             public void handle(javafx.scene.input.MouseEvent event) {
