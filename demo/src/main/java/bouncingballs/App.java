@@ -44,7 +44,7 @@ public class App extends Application {
      *      int index
      * OUT: void
     */
-    public Timeline handleTimeline(Circle ball, final double dx, final double dy, final int index){
+    public Timeline handleBallTimeline(Circle ball, final double dx, final double dy, final int index){
         
         Timeline loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
             double deltaX = dx;
@@ -144,7 +144,7 @@ public class App extends Application {
      * IN:  Circle object
      * OUT: double delta 
     */
-    public double calculateInitialDelta(Circle ball){
+    private double calculateInitialDelta(Circle ball){
         return (1 / ball.getRadius()) * 30 ;
     }
 
@@ -154,11 +154,31 @@ public class App extends Application {
      * IN:  void
      * OUT: int
     */
-    public int calculateInitialStart(){
+    private int calculateInitialStart(){
         Random rand = new Random();
         return rand.nextInt((int) scene.getHeight());
     }
 
+    /* 
+     * A function to put the balls on the canvas and start their timelines
+     * IN:  void
+     * OUT: void
+    */
+    private void addBalls(){
+        // Add balls to scene
+        for(int i = 0; i < numBalls; i++){
+            activeObjects.add(new Circle(generateRadius(), generateColor()));
+            activeObjects.get(i).relocate(calculateInitialStart(), calculateInitialStart());
+            canvas.getChildren().add(activeObjects.get(i));
+            toFlip.add(false);
+        }
+
+        // Create the timeline for the activeObjects
+        for(int i = 0; i < numBalls; i++){
+            Timeline timeline = handleBallTimeline(activeObjects.get(i), calculateInitialDelta(activeObjects.get(i)), calculateInitialDelta(activeObjects.get(i)), i);
+            timelines.add(timeline); // Store the timelines
+        }
+    }
     
     /* 
      * A function to initialize all of the variables and kick off the timelines
@@ -167,15 +187,10 @@ public class App extends Application {
     */
     @Override
     public void start(Stage stage) {        
-
-        // Add balls to scene
-        for(int i = 0; i < numBalls; i++){
-            activeObjects.add(new Circle(generateRadius(), generateColor()));
-            activeObjects.get(i).relocate(calculateInitialStart(), calculateInitialStart());
-            canvas.getChildren().add(activeObjects.get(i));
-            toFlip.add(false);
-        }
         
+        // Handle the initial ball setup logic
+        addBalls();
+
         // Add swap button to scene
         Button swapButton = new Button();
         swapButton.setText("Swap Objects!");
@@ -186,6 +201,7 @@ public class App extends Application {
             //clear our objects lists for efficiency
             activeObjects.clear();
             toFlip.clear();
+            timelines.clear();
         });
         swapButton.setLayoutX(150);
         swapButton.setLayoutY(120);
@@ -195,12 +211,6 @@ public class App extends Application {
         stage.setTitle("Moving Ball");
         stage.setScene(scene);
         stage.show();
-        
-        // Create the timeline for the activeObjects
-        for(int i = 0; i < numBalls; i++){
-            Timeline timeline = handleTimeline(activeObjects.get(i), calculateInitialDelta(activeObjects.get(i)), calculateInitialDelta(activeObjects.get(i)), i);
-            timelines.add(timeline); // Store the timelines
-        }
 
         // Handle mouseclick logic
         scene.setOnMouseClicked(new EventHandler<javafx.scene.input.MouseEvent>() {
