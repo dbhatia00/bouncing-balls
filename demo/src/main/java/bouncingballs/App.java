@@ -34,6 +34,7 @@ public class App extends Application {
     private double mouseX;
     private double mouseY;
     private ArrayList<Timeline> timelines = new ArrayList<>();
+    private boolean circleOrConfetti = false;
 
 
     /* 
@@ -179,6 +180,27 @@ public class App extends Application {
             timelines.add(timeline); // Store the timelines
         }
     }
+
+    /* 
+     * A function to put the balls on the canvas and start their timelines
+     * IN:  void
+     * OUT: void
+    */
+    private void addConfetti(){
+        // Add balls to scene
+        for(int i = 0; i < numBalls; i++){
+            activeObjects.add(new Circle(generateRadius(), generateColor()));
+            activeObjects.get(i).relocate(calculateInitialStart(), calculateInitialStart());
+            canvas.getChildren().add(activeObjects.get(i));
+            toFlip.add(false);
+        }
+
+        // Create the timeline for the activeObjects
+        for(int i = 0; i < numBalls; i++){
+            Timeline timeline = handleBallTimeline(activeObjects.get(i), calculateInitialDelta(activeObjects.get(i)), calculateInitialDelta(activeObjects.get(i)), i);
+            timelines.add(timeline); // Store the timelines
+        }
+    }
     
     /* 
      * A function to initialize all of the variables and kick off the timelines
@@ -195,13 +217,29 @@ public class App extends Application {
         Button swapButton = new Button();
         swapButton.setText("Swap Objects!");
         swapButton.setOnAction( event -> {
+            // Stop each timeline
             for (Timeline timeline : timelines) {
-                timeline.stop(); // Stop each timeline
+                timeline.stop();
             }
-            //clear our objects lists for efficiency
+
+            //Remove each circle from the canvas
+            for (Circle circle : activeObjects) {
+                canvas.getChildren().remove(circle);
+            }
+
+            //clear objects lists for efficiency
             activeObjects.clear();
             toFlip.clear();
             timelines.clear();
+
+            //Switch object types
+            if (!circleOrConfetti) {
+                circleOrConfetti = true;
+                addConfetti();
+            } else {
+                circleOrConfetti = false;
+                addBalls();
+            }
         });
         swapButton.setLayoutX(150);
         swapButton.setLayoutY(120);
