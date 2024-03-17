@@ -28,11 +28,13 @@ import java.io.IOException;
 public class App extends Application {
     private Pane canvas = new Pane();
     private Scene scene = new Scene(canvas, 1300, 800);
-    private ArrayList<Circle> balls = new ArrayList<Circle>(); 
+    private ArrayList<Circle> activeObjects = new ArrayList<Circle>(); 
     private ArrayList<Boolean> toFlip = new ArrayList<Boolean>();
     private final int numBalls = 50;
     private double mouseX;
     private double mouseY;
+    private ArrayList<Timeline> timelines = new ArrayList<>();
+
 
     /* 
      * A function to handle creating the timeline of a single Circle
@@ -42,7 +44,7 @@ public class App extends Application {
      *      int index
      * OUT: void
     */
-    public void handleTimeline(Circle ball, final double dx, final double dy, final int index){
+    public Timeline handleTimeline(Circle ball, final double dx, final double dy, final int index){
         
         Timeline loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
             double deltaX = dx;
@@ -74,11 +76,12 @@ public class App extends Application {
 
         loop.setCycleCount(Timeline.INDEFINITE);
         loop.play();
+        return loop;
     }
 
 
     /* 
-     * A function to do the math on the mouseclick for the Y component
+     * A function to do the math on the mouseclick for the X component
      * IN:  double currentX
      *      double currentY
      *      double magnitude
@@ -114,7 +117,8 @@ public class App extends Application {
 
 
     /* 
-     * A function to randomly generate a ball's radius
+     * A function to randomly generate a ball's radius. 
+     * Restricted to being between 40 and 10.
      * IN:  Void
      * OUT: double radius 
     */
@@ -136,7 +140,7 @@ public class App extends Application {
 
 
     /* 
-     * A function to calculate the radius of an object based on its radius
+     * A function to calculate the speed of an object based on its radius
      * IN:  Circle object
      * OUT: double delta 
     */
@@ -166,33 +170,36 @@ public class App extends Application {
 
         // Add balls to scene
         for(int i = 0; i < numBalls; i++){
-            balls.add(new Circle(generateRadius(), generateColor()));
-            balls.get(i).relocate(calculateInitialStart(), calculateInitialStart());
-            canvas.getChildren().add(balls.get(i));
+            activeObjects.add(new Circle(generateRadius(), generateColor()));
+            activeObjects.get(i).relocate(calculateInitialStart(), calculateInitialStart());
+            canvas.getChildren().add(activeObjects.get(i));
             toFlip.add(false);
         }
         
         // Add swap button to scene
-        Button btn = new Button();
-        btn.setText("Swap Objects!");
-        btn.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                canvas.getChildren().clear();
+        Button swapButton = new Button();
+        swapButton.setText("Swap Objects!");
+        swapButton.setOnAction( event -> {
+            for (Timeline timeline : timelines) {
+                timeline.stop(); // Stop each timeline
             }
+            //clear our objects lists for efficiency
+            activeObjects.clear();
+            toFlip.clear();
         });
-        btn.setLayoutX(150);
-        btn.setLayoutY(120);
-        canvas.getChildren().add(btn);
+        swapButton.setLayoutX(150);
+        swapButton.setLayoutY(120);
+        canvas.getChildren().add(swapButton);
 
         // Set scene parameters and show screen
         stage.setTitle("Moving Ball");
         stage.setScene(scene);
         stage.show();
         
-        // Create the timeline for the balls
+        // Create the timeline for the activeObjects
         for(int i = 0; i < numBalls; i++){
-            handleTimeline(balls.get(i), calculateInitialDelta(balls.get(i)), calculateInitialDelta(balls.get(i)), i);
+            Timeline timeline = handleTimeline(activeObjects.get(i), calculateInitialDelta(activeObjects.get(i)), calculateInitialDelta(activeObjects.get(i)), i);
+            timelines.add(timeline); // Store the timelines
         }
 
         // Handle mouseclick logic
