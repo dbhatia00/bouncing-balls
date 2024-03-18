@@ -20,6 +20,8 @@ import javafx.util.Duration;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.io.IOException;
 
 /**
@@ -28,12 +30,12 @@ import java.io.IOException;
 public class App extends Application {
     private Pane canvas = new Pane();
     private Scene scene = new Scene(canvas, 1300, 800);
-    private ArrayList<Circle> activeObjects = new ArrayList<Circle>(); 
-    private ArrayList<Boolean> toFlip = new ArrayList<Boolean>();
+    private List<Circle> activeObjects = Collections.synchronizedList(new ArrayList<Circle>());
+    private List<Boolean> toFlip = Collections.synchronizedList(new ArrayList<Boolean>());
     private int numObjects = 50;
     private double mouseX;
     private double mouseY;
-    private ArrayList<Timeline> timelines = new ArrayList<>();
+    private List<Timeline> timelines = Collections.synchronizedList(new ArrayList<>());
     private boolean circleOrConfetti = false;
 
 
@@ -58,8 +60,6 @@ public class App extends Application {
                 ball.setLayoutY(ball.getLayoutY() + deltaY);
 
                 // Set bounds variables
-                ball.setLayoutX(ball.getLayoutX() + deltaX);
-                ball.setLayoutY(ball.getLayoutY() + deltaY);
                 final Bounds bounds = canvas.getBoundsInLocal();
                 final boolean atRightBorder = ball.getLayoutX() >= (bounds.getMaxX() - ball.getRadius());
                 final boolean atLeftBorder = ball.getLayoutX() <= (bounds.getMinX() + ball.getRadius());
@@ -266,20 +266,27 @@ public class App extends Application {
      * IN:  void
      * OUT: void
     */
-    private void addBalls(){
-        // Add balls to scene
-        for(int i = 0; i < numObjects; i++){
-            activeObjects.add(new Circle(generateRadius(), generateColor()));
-            activeObjects.get(i).relocate(calculateInitialStart(), calculateInitialStart());
-            canvas.getChildren().add(activeObjects.get(i));
+    private void addBalls() {
+        for (int i = 0; i < numObjects; i++) {
+            Circle ball = new Circle(generateRadius(), generateColor());
+            ball.relocate(calculateInitialStart(), calculateInitialStart());
+            activeObjects.add(ball);
             toFlip.add(false);
+            canvas.getChildren().add(ball); 
         }
-
-        // Create the timeline for the activeObjects
-        for(int i = 0; i < numObjects; i++){
-            Timeline timeline = handleBallTimeline(activeObjects.get(i), calculateInitialDelta(activeObjects.get(i)), calculateInitialDelta(activeObjects.get(i)), i);
-            timelines.add(timeline); // Store the timelines
+    
+        ExecutorService executorService = Executors.newFixedThreadPool(numObjects);
+        for (int i = 0; i < numObjects; i++) {
+            final int index = i;
+            executorService.execute(() -> {
+                Timeline timeline;
+                synchronized (timelines) {
+                    timeline = handleBallTimeline(activeObjects.get(index), calculateInitialDelta(activeObjects.get(index)), calculateInitialDelta(activeObjects.get(index)), index);
+                    timelines.add(timeline);
+                }
+            });
         }
+        executorService.shutdown();
     }
 
     /* 
@@ -287,20 +294,27 @@ public class App extends Application {
      * IN:  void
      * OUT: void
     */
-    private void addConfetti(){
-        // Add confetti to scene
-        for(int i = 0; i < numObjects; i++){
-            activeObjects.add(new Circle(5, generateColor()));
-            activeObjects.get(i).relocate(calculateInitialStart(), calculateInitialStart());
-            canvas.getChildren().add(activeObjects.get(i));
+    private void addConfetti() {
+        for (int i = 0; i < numObjects; i++) {
+            Circle ball = new Circle(5, generateColor());
+            ball.relocate(calculateInitialStart(), calculateInitialStart());
+            activeObjects.add(ball);
             toFlip.add(false);
+            canvas.getChildren().add(ball); // Adding to the canvas
         }
-
-        // Create the timeline for the activeObjects
-        for(int i = 0; i < numObjects; i++){
-            Timeline timeline = handleConfettiTimeline(activeObjects.get(i), 0, 0, i);
-            timelines.add(timeline); // Store the timelines
+    
+        ExecutorService executorService = Executors.newFixedThreadPool(numObjects);
+        for (int i = 0; i < numObjects; i++) {
+            final int index = i;
+            executorService.execute(() -> {
+                Timeline timeline;
+                synchronized (timelines) {
+                    timeline = handleConfettiTimeline(activeObjects.get(index), 0, 0, index);
+                    timelines.add(timeline);
+                }
+            });
         }
+        executorService.shutdown();
     }
     
     /* 
@@ -350,8 +364,11 @@ public class App extends Application {
         swapButton.setText("Swap Objects!");
         swapButton.setOnAction( event -> {
             // Stop each timeline
-            for (Timeline timeline : timelines) {
-                timeline.stop();
+            synchronized (timelines) {
+                for (Timeline timeline : timelines) {
+                    timeline.stop();
+                }
+                timelines.clear();
             }
 
             //Remove each circle from the canvas
