@@ -30,7 +30,7 @@ public class App extends Application {
     private Scene scene = new Scene(canvas, 1300, 800);
     private ArrayList<Circle> activeObjects = new ArrayList<Circle>(); 
     private ArrayList<Boolean> toFlip = new ArrayList<Boolean>();
-    private final int numBalls = 50;
+    private int numObjects = 50;
     private double mouseX;
     private double mouseY;
     private ArrayList<Timeline> timelines = new ArrayList<>();
@@ -53,23 +53,31 @@ public class App extends Application {
             
             @Override
             public void handle(final ActionEvent t) {
+                // Update position
+                ball.setLayoutX(ball.getLayoutX() + deltaX);
+                ball.setLayoutY(ball.getLayoutY() + deltaY);
+
+                // Set bounds variables
                 ball.setLayoutX(ball.getLayoutX() + deltaX);
                 ball.setLayoutY(ball.getLayoutY() + deltaY);
                 final Bounds bounds = canvas.getBoundsInLocal();
                 final boolean atRightBorder = ball.getLayoutX() >= (bounds.getMaxX() - ball.getRadius());
                 final boolean atLeftBorder = ball.getLayoutX() <= (bounds.getMinX() + ball.getRadius());
-                final boolean atBottomBorder = ball.getLayoutY() >= (bounds.getMaxY() - ball.getRadius());
-                final boolean atTopBorder = ball.getLayoutY() <= (bounds.getMinY() + ball.getRadius());
+                final boolean atBottomBorder = ball.getLayoutY() >= (bounds.getMaxY() - ball.getRadius() - 20);
+                final boolean atTopBorder = ball.getLayoutY() <= (bounds.getMinY() + ball.getRadius() + 20);
 
+                // Do border logic
                 if (atRightBorder || atLeftBorder) {
                     deltaX *= -1;
                 }
                 if (atBottomBorder || atTopBorder) {
                     deltaY *= -1;
                 }
+
+                // Do mouseclick logic
                 if (toFlip.get(index)){
-                    deltaX = doMouseclickMath_X(ball.getLayoutX(), ball.getLayoutY(), Math.sqrt(Math.pow(deltaY, 2) + Math.pow(deltaX, 2)));
-                    deltaY = doMouseclickMath_Y(ball.getLayoutX(), ball.getLayoutY(), Math.sqrt(Math.pow(deltaY, 2) + Math.pow(deltaX, 2)));
+                    deltaX = doMouseclickMathBalls_X(ball.getLayoutX(), ball.getLayoutY(), Math.sqrt(Math.pow(deltaY, 2) + Math.pow(deltaX, 2)));
+                    deltaY = doMouseclickMathBalls_Y(ball.getLayoutX(), ball.getLayoutY(), Math.sqrt(Math.pow(deltaY, 2) + Math.pow(deltaX, 2)));
                     toFlip.set(index, false);
                 }
             }
@@ -80,15 +88,108 @@ public class App extends Application {
         return loop;
     }
 
+        /* 
+     * A function to handle creating the timeline of a single Circle
+     * IN:  Circle object
+     *      double dx
+     *      double dy
+     *      int index
+     * OUT: void
+    */
+    public Timeline handleConfettiTimeline(Circle ball, final double dx, final double dy, final int index){
+        
+        Timeline loop = new Timeline(new KeyFrame(Duration.millis(10), new EventHandler<ActionEvent>() {
+            double deltaX = dx;
+            double deltaY = dy;
+            
+            @Override
+            public void handle(final ActionEvent t) {
+                // Update position
+                ball.setLayoutX(ball.getLayoutX() + deltaX);
+                ball.setLayoutY(ball.getLayoutY() + deltaY);
+
+                // Set bounds variables
+                final Bounds bounds = canvas.getBoundsInLocal();
+                final boolean atRightBorder = ball.getLayoutX() >= (bounds.getMaxX() - ball.getRadius() - 20);
+                final boolean atLeftBorder = ball.getLayoutX() <= (bounds.getMinX() + ball.getRadius() + 20);
+                final boolean atBottomBorder = ball.getLayoutY() >= (bounds.getMaxY() - ball.getRadius() - 20);
+                final boolean atTopBorder = ball.getLayoutY() <= (bounds.getMinY() + ball.getRadius() + 20);
+                
+                // Slow down the confetti until it hits zero
+                if(deltaX > 0){
+                    deltaX -= 0.1;
+                } else {
+                    deltaX += 0.1;
+                }
+
+                if(deltaY > 0){
+                    deltaY -= 0.1;
+                } else {
+                    deltaY += 0.1;
+                }
+
+                // Border switch logic
+                if (atRightBorder || atLeftBorder) {
+                    deltaX *= -1;
+                }
+                if (atBottomBorder || atTopBorder) {
+                    deltaY *= -1;
+                }
+
+                // Do the mouseclick away operation
+                if (toFlip.get(index)){
+                    deltaX = doMouseclickMathConfetti_X(ball.getLayoutX(), ball.getLayoutY());
+                    deltaY = doMouseclickMathConfetti_Y(ball.getLayoutX(), ball.getLayoutY());
+                    toFlip.set(index, false);
+                }
+            }
+        }));
+
+        loop.setCycleCount(Timeline.INDEFINITE);
+        loop.play();
+        return loop;
+    }
 
     /* 
-     * A function to do the math on the mouseclick for the X component
+     * A function to do the math on the mouseclick for the X component (Confetti)
+     * IN:  double currentX
+     *      double currentY
+     * OUT: double deltaX 
+    */
+    private double doMouseclickMathConfetti_X(double currentX, double currentY){
+        double angle = Math.atan(Math.abs(currentY - mouseY) / Math.abs(currentX - mouseX));
+        if (currentX > mouseX){
+            return 10 * Math.sin(angle);
+        }
+        else {
+            return -10 * Math.sin(angle);
+        }
+    }
+
+    /* 
+     * A function to do the math on the mouseclick for the Y component (Confetti)
+     * IN:  double currentX
+     *      double currentY
+     * OUT: double deltaY 
+    */
+    private double doMouseclickMathConfetti_Y(double currentX, double currentY){
+        double angle = Math.atan(Math.abs(currentY - mouseY) / Math.abs(currentX - mouseX));
+        if (currentY > mouseY){
+            return 10 * Math.cos(angle);
+        }
+        else {
+            return -10 * Math.cos(angle);
+        }
+    }
+
+    /* 
+     * A function to do the math on the mouseclick for the X component (Balls)
      * IN:  double currentX
      *      double currentY
      *      double magnitude
-     * OUT: double radius 
+     * OUT: double deltaX 
     */
-    private double doMouseclickMath_X(double currentX, double currentY, double magnitude){
+    private double doMouseclickMathBalls_X(double currentX, double currentY, double magnitude){
         double angle = Math.atan(Math.abs(currentY - mouseY) / Math.abs(currentX - mouseX));
         if (currentX > mouseX){
             return magnitude * Math.sin(angle);
@@ -104,9 +205,9 @@ public class App extends Application {
      * IN:  double currentX
      *      double currentY
      *      double magnitude
-     * OUT: double radius 
+     * OUT: double deltaY 
     */
-    private double doMouseclickMath_Y(double currentX, double currentY, double magnitude){
+    private double doMouseclickMathBalls_Y(double currentX, double currentY, double magnitude){
         double angle = Math.atan(Math.abs(currentY - mouseY) / Math.abs(currentX - mouseX));
         if (currentY > mouseY){
             return magnitude * Math.cos(angle);
@@ -167,7 +268,7 @@ public class App extends Application {
     */
     private void addBalls(){
         // Add balls to scene
-        for(int i = 0; i < numBalls; i++){
+        for(int i = 0; i < numObjects; i++){
             activeObjects.add(new Circle(generateRadius(), generateColor()));
             activeObjects.get(i).relocate(calculateInitialStart(), calculateInitialStart());
             canvas.getChildren().add(activeObjects.get(i));
@@ -175,7 +276,7 @@ public class App extends Application {
         }
 
         // Create the timeline for the activeObjects
-        for(int i = 0; i < numBalls; i++){
+        for(int i = 0; i < numObjects; i++){
             Timeline timeline = handleBallTimeline(activeObjects.get(i), calculateInitialDelta(activeObjects.get(i)), calculateInitialDelta(activeObjects.get(i)), i);
             timelines.add(timeline); // Store the timelines
         }
@@ -187,21 +288,49 @@ public class App extends Application {
      * OUT: void
     */
     private void addConfetti(){
-        // Add balls to scene
-        for(int i = 0; i < numBalls; i++){
-            activeObjects.add(new Circle(generateRadius(), generateColor()));
+        // Add confetti to scene
+        for(int i = 0; i < numObjects; i++){
+            activeObjects.add(new Circle(5, generateColor()));
             activeObjects.get(i).relocate(calculateInitialStart(), calculateInitialStart());
             canvas.getChildren().add(activeObjects.get(i));
             toFlip.add(false);
         }
 
         // Create the timeline for the activeObjects
-        for(int i = 0; i < numBalls; i++){
-            Timeline timeline = handleBallTimeline(activeObjects.get(i), calculateInitialDelta(activeObjects.get(i)), calculateInitialDelta(activeObjects.get(i)), i);
+        for(int i = 0; i < numObjects; i++){
+            Timeline timeline = handleConfettiTimeline(activeObjects.get(i), 0, 0, i);
             timelines.add(timeline); // Store the timelines
         }
     }
     
+    /* 
+     * A function to generate the number of objects from processes
+     * IN:  void
+     * OUT: void
+    */
+    private void numObjects(){
+        /* Total number of processors or cores available to the JVM */
+        System.out.println("Available processors (cores): " + 
+        Runtime.getRuntime().availableProcessors());
+
+        /* Total amount of free memory available to the JVM */
+        System.out.println("Free memory (bytes): " + 
+            Runtime.getRuntime().freeMemory());
+
+        /* This will return Long.MAX_VALUE if there is no preset limit */
+        long maxMemory = Runtime.getRuntime().maxMemory();
+        /* Maximum amount of memory the JVM will attempt to use */
+        System.out.println("Maximum memory (bytes): " + 
+            (maxMemory == Long.MAX_VALUE ? "no limit" : maxMemory));
+
+        /* Total memory currently available to the JVM */
+        System.out.println("Total memory available to JVM (bytes): " + 
+            Runtime.getRuntime().totalMemory());
+
+        // Tether the number of balls to the amount of free memory available (in MB)
+        numObjects = (int)(Runtime.getRuntime().freeMemory() / (1e6) / 3);
+    }
+
     /* 
      * A function to initialize all of the variables and kick off the timelines
      * IN:  Stage object
@@ -210,6 +339,9 @@ public class App extends Application {
     @Override
     public void start(Stage stage) {        
         
+        // Figure out how many objects to generate
+        numObjects();
+
         // Handle the initial ball setup logic
         addBalls();
 
@@ -257,7 +389,7 @@ public class App extends Application {
                 mouseX = event.getX();
                 mouseY = event.getY();
                 // Move circles away from the mouse click
-                for(int i = 0; i < numBalls; i++){
+                for(int i = 0; i < numObjects; i++){
                     toFlip.set(i, true);
                 }
             }
